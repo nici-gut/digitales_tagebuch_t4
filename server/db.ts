@@ -1,4 +1,8 @@
-// Ein Interface, das beschreibt, wie ein Tagebucheintrag aussieht
+// Öffne die Deno KV Datenbank.
+// Deno KV speichert die Daten persistent in einer lokalen Datei.
+const kv = await Deno.openKv();
+
+// Das Interface bleibt dasselbe
 export interface Entry {
   id: string;
   title: string;
@@ -6,57 +10,76 @@ export interface Entry {
   createdAt: Date;
 }
 
-// Temporäre In-Memory-Datenbank (wird bei jedem Server-Neustart zurückgesetzt)
-// Wir füllen sie mit einem Beispiel-Eintrag.
-const entries: Entry[] = [
-  {
-    id: "1",
-    title: "Mein erster Eintrag",
-    content: "Hallo Welt! Dies ist mein erstes digitales Tagebuch.",
-    createdAt: new Date(),
-  },
-];
-
-// --- Datenbank-Funktionen (noch als Platzhalter) ---
+// --- ECHTE Datenbank-Funktionen mit Deno KV ---
 
 // Holt alle Einträge
 export async function getEntries(): Promise<Entry[]> {
-  console.log("Rufe alle Einträge ab...");
-  return await Promise.resolve(entries); // Simuliert eine asynchrone DB-Abfrage
+  console.log("Rufe alle Einträge aus Deno KV ab...");
+  const entries: Entry[] = [];
+
+  // kv.list() durchsucht Einträge. Wir nutzen ein "Präfix", 
+  // um alle Schlüssel zu finden, die mit ["entries"] beginnen.
+  const iter = kv.list<Entry>({ prefix: ["entries"] });
+  for await (const res of iter) {
+    entries.push(res.value);
+  }
+
+  // Sortiere sie nach Datum (neueste zuerst)
+  return entries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 // Erstellt einen neuen Eintrag
 export async function createEntry(title: string, content: string): Promise<Entry> {
-  console.log("Erstelle neuen Eintrag...");
+  console.log("Speichere neuen Eintrag in Deno KV...");
   const newEntry: Entry = {
-    id: crypto.randomUUID(), // Erzeugt eine zufällige, einzigartige ID
+    id: crypto.randomUUID(),
     title,
     content,
     createdAt: new Date(),
   };
-  entries.push(newEntry);
-  return await Promise.resolve(newEntry);
+
+  // Speichere den Eintrag unter einem eindeutigen Schlüssel (Array von Strings)
+  const key = ["entries", newEntry.id];
+  await kv.set(key, newEntry);
+
+  return newEntry;
 }
 
 // Aktualisiert einen Eintrag
 export async function updateEntry(id: string, title: string, content: string): Promise<Entry | null> {
-  console.log(`Aktualisiere Eintrag ${id}...`);
-  const entry = entries.find((e) => e.id === id);
-  if (entry) {
-    entry.title = title;
-    entry.content = content;
-    return await Promise.resolve(entry);
+  console.log(`Aktualisiere Eintrag ${id} in Deno KV...`);
+  const key = ["entries", id];
+
+  // 1. Hole den bestehenden Eintrag
+  const entryRes = await kv.get<Entry>(key);
+  if (!entryRes.value) {
+    return null; // Nicht gefunden
   }
-  return await Promise.resolve(null); // Eintrag nicht gefunden
+
+  // 2. Erstelle den aktualisierten Eintrag
+  const updatedEntry: Entry = {
+    ...entryRes.value, // Behalte alte Werte wie id und createdAt bei
+    title,
+    content,
+  };
+
+  // 3. Überschreibe den alten Eintrag am selben Schlüssel
+  await kv.set(key, updatedEntry);
+  return updatedEntry;
 }
 
 // Löscht einen Eintrag
 export async function deleteEntry(id: string): Promise<boolean> {
-  console.log(`Lösche Eintrag ${id}...`);
-  const index = entries.findIndex((e) => e.id === id);
-  if (index > -1) {
-    entries.splice(index, 1); // Entfernt den Eintrag aus dem Array
-    return await Promise.resolve(true);
+  console.log(`Lösche Eintrag ${id} aus Deno KV...`);
+  const key = ["entries", id];
+
+  // Prüfen, ob der Eintrag überhaupt existiert
+  const entryRes = await kv.get<Entry>(key);
+  if (!entryRes.value) {
+    return false; // Nicht gefunden
   }
-  return await Promise.resolve(false); // Eintrag nicht gefunden
+
+  // Eintrag löschen
+  await kv.delete(key);
+  return true;
 }
