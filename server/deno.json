@@ -3,6 +3,7 @@
     "dev": "deno run --watch --allow-net --allow-read --allow-write --unstable-kv main.ts"
   },
   "imports": {
-    "oak": "https://deno.land/x/oak@v12.6.1/mod.ts"
+    "oak": "https://deno.land/x/oak@v12.6.1/mod.ts",
+    "jose": "npm:jose@5.9.6"
   }
 }

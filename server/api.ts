@@ -1,11 +1,34 @@
 import { Router } from "oak";
 import { getEntries, createEntry, updateEntry, deleteEntry } from "./db.ts";
+import { createJWT } from "./auth.ts";
 
 // Initialisiere einen neuen Router
 const router = new Router();
 
 // Setze ein Präfix für alle API-Routen, z.B. /api
 router.prefix("/api");
+// [POST] /api/login
+router.post("/login", async (ctx) => {
+  const body = await ctx.request.body({ type: "json" }).value;
+  const { username, password } = body;
+
+  // --- Hardcodierte Benutzerprüfung ---
+  // In einer echten App würdest du hier die Deno KV-Datenbank
+  // nach einem Benutzer mit diesem Passwort-Hash durchsuchen.
+  if (username === "admin" && password === "password123") {
+    // Benutzer ist gültig, erstelle ein Token
+    const token = await createJWT(username);
+    ctx.response.body = {
+      message: "Login erfolgreich!",
+      token: token,
+      user: { username: username },
+    };
+  } else {
+    // Ungültige Daten
+    ctx.response.status = 401; // Unauthorized
+    ctx.response.body = { error: "Ungültiger Benutzername oder Passwort." };
+  }
+});
 
 // [C]REATE: POST /api/entries
 router.post("/entries", async (ctx) => {
