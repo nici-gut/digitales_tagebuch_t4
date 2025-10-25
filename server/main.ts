@@ -68,6 +68,11 @@ app.use((ctx) => {
   ctx.response.body = "Endpunkt nicht gefunden.";
 });
 
-// Server-Start (bleibt gleich)
-console.log(`Server läuft auf http://localhost:${port}`);
-await app.listen({ port: port });
+
+console.log(`Server läuft auf https://localhost:${port}`);
+await app.listen({
+  port: port,
+  // Sag Deno, wo es das Zertifikat und den Schlüssel findet
+  cert: await Deno.readTextFile("./localhost.pem"),
+  key: await Deno.readTextFile("./localhost-key.pem"),
+});
