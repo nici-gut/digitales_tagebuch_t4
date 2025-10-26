@@ -1,73 +1,81 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router' // Router importieren
 
-// Definiere den "auth" Store
 export const useAuthStore = defineStore('auth', () => {
-  // === ZUSTAND (State) ===
-  
-  // Wir laden das Token und den User direkt aus dem localStorage.
-  // Das erfüllt die Anforderung "nahtlos weiterarbeiten", da der
-  // Login-Status einen Refresh überlebt!
+  // === STATE (bleibt gleich) ===
   const token = ref<string | null>(localStorage.getItem('token') || null)
   const user = ref<{ username: string } | null>(
     JSON.parse(localStorage.getItem('user') || 'null')
   )
-
-  // Hol die API-URL aus der .env Datei
   const API_URL = import.meta.env.VITE_API_URL
+  
+  // NEU: Router initialisieren
+  const router = useRouter()
 
-  // === GETTERS (Computed Properties) ===
+  // === GETTERS (bleiben gleich) ===
   const isAuthenticated = computed(() => !!token.value)
   const authHeader = computed(() => ({
     'Authorization': `Bearer ${token.value}`
   }))
 
-  // === AKTIONEN (Actions) ===
+  // === AKTIONEN (aktualisiert) ===
 
-  /**
-   * Versucht, den Benutzer einzuloggen.
-   * Bei Erfolg werden Token und User im State UND im localStorage gespeichert.
-   */
   async function login(username: string, password: string) {
+    // ... (login-Funktion bleibt unverändert)
     const res = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     })
-
-    if (!res.ok) {
-      // Wenn der Server 401 (Unauthorized) o.ä. sendet, wirf einen Fehler
-      throw new Error('Login fehlgeschlagen')
-    }
-
+    if (!res.ok) throw new Error('Login fehlgeschlagen')
     const data = await res.json()
-    
-    // Speichere die Daten im State (Pinia)
     token.value = data.token
     user.value = data.user
-
-    // Speichere die Daten persistent im localStorage
     localStorage.setItem('token', data.token)
     localStorage.setItem('user', JSON.stringify(data.user))
   }
 
   /**
-   * Loggt den Benutzer aus.
+   * AKTUALISIERT: Leert den State UND leitet zum Login weiter
    */
   function logout() {
     token.value = null
     user.value = null
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    // Leite den User immer zur Login-Seite
+    router.push({ name: 'login' })
   }
 
-  // Gib alles zurück, was die Komponenten verwenden dürfen
+  /**
+   * NEU: Ein Helfer für authentifizierte API-Aufrufe
+   */
+  async function fetchWithAuth(urlPath: string, options: RequestInit = {}) {
+    const res = await fetch(`${API_URL}${urlPath}`, {
+      ...options,
+      headers: {
+        ...options.headers,
+        ...authHeader.value
+      }
+    });
+
+    if (res.status === 401) {
+      // Token ungültig oder abgelaufen!
+      // Automatisch ausloggen.
+      logout()
+      throw new Error('Unauthorized - Logging out')
+    }
+    return res
+  }
+
   return {
     token,
     user,
     isAuthenticated,
-    authHeader,
+    // authHeader wird jetzt intern genutzt, wir müssen es nicht mehr exportieren
     login,
     logout,
+    fetchWithAuth // NEU
   }
 })
