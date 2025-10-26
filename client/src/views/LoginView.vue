@@ -16,8 +16,8 @@
         placeholder="Passwort" 
       />
     </div>
-    <button @click="handleLogin">
-      Einloggen
+    <button @click="handleLogin" :disabled="isLoading">
+      {{ isLoading ? 'Logge ein...' : 'Einloggen' }}
     </button>
 
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
@@ -25,38 +25,59 @@
 </template>
 
 <script setup lang="ts">
-// Importiere 'ref', um reaktive Variablen zu erstellen
 import { ref } from 'vue'
+// Importiere unseren neuen Auth-Store
+import { useAuthStore } from '@/stores/authStore'
+// Importiere den Vue Router, um weiterzuleiten
+import { useRouter } from 'vue-router'
 
-// 'v-model' bindet diese Variablen an die Input-Felder
-const username = ref('admin') // Vorbelegt für einfaches Testen
-const password = ref('password123') // Vorbelegt für einfaches Testen
+const username = ref('admin')
+const password = ref('password123')
 const errorMessage = ref('')
+const isLoading = ref(false) // Für Lade-Feedback
 
-// Diese Funktion wird beim Klick auf den Button aufgerufen
+// Initialisiere den Store und den Router
+const authStore = useAuthStore()
+const router = useRouter()
+
 async function handleLogin() {
-  // Setze Fehler zurück
   errorMessage.value = ''
+  isLoading.value = true
   
-  // Logik kommt in Schritt 8
-  console.log('Login-Versuch mit:', username.value, password.value)
-  alert('Login-Logik fehlt noch!')
+  try {
+    // Rufe die login-Aktion aus dem Store auf
+    await authStore.login(username.value, password.value)
+    
+    // Login war erfolgreich!
+    // Leite den Benutzer zur (noch zu erstellenden) Tagebuch-Seite weiter
+    router.push('/tagebuch')
+
+  } catch (error) {
+    // Die 'login'-Aktion hat einen Fehler geworfen (z.B. 401)
+    errorMessage.value = 'Login fehlgeschlagen. Bitte prüfe deine Daten.'
+    console.error(error)
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
 <style scoped>
-/* 'scoped' bedeutet, dass dieses CSS NUR für diese Komponente gilt */
+/* Die Styles bleiben unverändert */
 .card {
   max-width: 400px;
 }
-
 div {
   margin-bottom: 0.5rem;
 }
-
 .error {
   color: #e53935; /* Rot */
   text-align: center;
   margin-top: 1rem;
+}
+/* Style für deaktivierten Button */
+button:disabled {
+  background-color: #9e9e9e;
+  cursor: not-allowed;
 }
 </style>
