@@ -33,18 +33,38 @@
       <li v-if="!loading && entries.length === 0">Noch keine Einträge vorhanden.</li>
       
       <li v-for="entry in entries" :key="entry.id">
-        <div class="content">
-          <strong>{{ entry.title }}</strong>
-          <p>{{ entry.content }}</p>
-          <small>{{ new Date(entry.createdAt).toLocaleString('de-DE') }}</small>
-        </div>
         
-        <div class="actions">
-          <button class="edit-btn">Bearbeiten</button>
-          <button @click="deleteEntry(entry.id)" class="delete-btn">
-            Löschen
-          </button>
-        </div>
+        <template v-if="editingEntryId === entry.id">
+          <div class="content">
+            <input type="text" v-model="editTitle" class="edit-input" />
+            <textarea v-model="editContent" class="edit-input" rows="4"></textarea>
+          </div>
+          <div class="actions">
+            <button @click="saveEntry(entry.id)" class="save-btn">
+              Speichern
+            </button>
+            <button @click="cancelEdit" class="cancel-btn">
+              Abbrechen
+            </button>
+          </div>
+        </template>
+
+        <template v-else>
+          <div class="content">
+            <strong>{{ entry.title }}</strong>
+            <p>{{ entry.content }}</p>
+            <small>{{ new Date(entry.createdAt).toLocaleString('de-DE') }}</small>
+          </div>
+          <div class="actions">
+            <button @click="toggleEdit(entry)" class="edit-btn">
+              Bearbeiten
+            </button>
+            <button @click="deleteEntry(entry.id)" class="delete-btn">
+              Löschen
+            </button>
+          </div>
+        </template>
+
       </li>
     </ul>
 
@@ -70,6 +90,11 @@ const entries = ref<Entry[]>([])
 // Formular-Daten für neuen Eintrag
 const newEntryTitle = ref('')
 const newEntryContent = ref('')
+
+// Refs für den Bearbeitungs-Zustand
+const editingEntryId = ref<string | null>(null) // ID des Eintrags, der bearbeitet wird
+const editTitle = ref('') // Temporärer Titel während der Bearbeitung
+const editContent = ref('') // Temporärer Inhalt während der Bearbeitung
 
 // --- READ ---
 // Lädt alle Einträge vom Server
@@ -130,6 +155,54 @@ async function deleteEntry(id: string) {
     
     // Liste neu laden, um den gelöschten Eintrag zu entfernen
     await loadEntries()
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+// --- UPDATE (Bearbeiten) ---
+
+// Wird aufgerufen, wenn "Bearbeiten" geklickt wird
+function toggleEdit(entry: Entry) {
+  // Setze den Zustand auf diesen Eintrag
+  editingEntryId.value = entry.id
+  // Fülle die Formularfelder mit den aktuellen Daten
+  editTitle.value = entry.title
+  editContent.value = entry.content
+}
+
+// Wird aufgerufen, wenn "Abbrechen" geklickt wird
+function cancelEdit() {
+  // Setze den Zustand zurück
+  editingEntryId.value = null
+  editTitle.value = ''
+  editContent.value = ''
+}
+
+// Wird aufgerufen, wenn "Speichern" geklickt wird
+async function saveEntry(id: string) {
+  if (!editTitle.value.trim() || !editContent.value.trim()) {
+    alert('Titel und Inhalt dürfen nicht leer sein.')
+    return
+  }
+  
+  try {
+    const res = await authStore.fetchWithAuth(`/entries/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: editTitle.value,
+        content: editContent.value
+      })
+    })
+
+    if (!res.ok) throw new Error('Fehler beim Aktualisieren')
+
+    // Zustand zurücksetzen
+    cancelEdit()
+    // Liste neu laden, um die Änderungen anzuzeigen
+    await loadEntries()
+
   } catch (error) {
     console.error(error)
   }
@@ -219,5 +292,29 @@ onMounted(() => {
 }
 .delete-btn:hover {
   background: #c62828;
+}
+
+/* Styles für Bearbeiten-Modus */
+.save-btn {
+  background: #4caf50; /* Grün */
+}
+.save-btn:hover {
+  background: #43a047;
+}
+.cancel-btn {
+  background: #757575; /* Grau */
+}
+.cancel-btn:hover {
+  background: #616161;
+}
+.edit-input {
+  /* Nutze die globalen Styles, aber mit 100% Breite */
+  width: calc(100% - 1.2rem);
+  padding: 0.6rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: Arial, sans-serif;
 }
 </style>
