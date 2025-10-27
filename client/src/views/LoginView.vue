@@ -31,8 +31,8 @@ import { useAuthStore } from '@/stores/authStore'
 // Importiere den Vue Router, um weiterzuleiten
 import { useRouter } from 'vue-router'
 
-const username = ref('admin')
-const password = ref('password123')
+const username = ref('')
+const password = ref('')
 const errorMessage = ref('')
 const isLoading = ref(false) // Für Lade-Feedback
 

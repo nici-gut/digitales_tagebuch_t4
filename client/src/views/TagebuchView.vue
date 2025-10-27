@@ -220,95 +220,140 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Diese Styles sind inspiriert von deiner index.html */
+hr {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 2rem 0;
+}
+
+h2 {
+  color: #5c6bc0; 
+  text-align: left;
+  border-bottom: 2px solid #5c6bc0;
+  padding-bottom: 0.5rem;
+}
+
 .header {
   display: flex;
+  flex-wrap: wrap; 
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  gap: 1rem;
 }
 .header h1 {
   margin: 0;
   text-align: left;
+  color: #5c6bc0; 
 }
 .header span {
   margin-right: 1rem;
+  color: #333;
 }
 .logout-btn {
-  width: auto; /* Buttons im Header sollen nicht 100% breit sein */
-  background: #666;
+  width: auto;
+  background: #bdbdbd; 
 }
 .logout-btn:hover {
-  background: #888;
+  background: #9e9e9e;
 }
+
+.card button {
+  background: #5c6bc0; 
+}
+.card button:hover {
+  background: #7986cb;
+}
+
 
 .entry-list {
   list-style: none;
   padding: 0;
+  
+
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem; 
 }
+
 .entry-list li {
-  background: #fff;
-  margin: 1rem 0;
-  padding: 1.5rem;
+  background: #ffffff;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  align-items: flex-start;
+  padding: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+.entry-list li:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+
 .content {
-  flex-grow: 1;
+  flex-grow: 1; 
 }
 .content strong {
   display: block;
   margin-bottom: 0.5rem;
-  color: #4a148c;
+  color: #5c6bc0; 
   font-size: 1.2rem;
 }
 .content p {
   margin: 0.5rem 0;
+  white-space: pre-wrap; 
 }
 .content small {
   color: #777;
+  display: block;
+  margin-top: 1rem;
 }
+
 .actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row; 
   gap: 0.5rem;
-  margin-left: 1rem;
+  margin-top: 1.5rem;
   flex-shrink: 0;
 }
 .actions button {
-  width: 100px;
-}
-.edit-btn {
-  background: #1e88e5;
-}
-.edit-btn:hover {
-  background: #1565c0;
-}
-.delete-btn {
-  background: #e53935;
-}
-.delete-btn:hover {
-  background: #c62828;
+  flex-grow: 1;
+  width: auto; 
+  font-size: 0.9rem;
 }
 
-/* Styles für Bearbeiten-Modus */
-.save-btn {
-  background: #4caf50; /* Grün */
+.edit-btn { 
+  background: #64b5f6; 
 }
-.save-btn:hover {
-  background: #43a047;
+.edit-btn:hover { 
+  background: #42a5f5; 
 }
-.cancel-btn {
-  background: #757575; /* Grau */
+
+.delete-btn { 
+  background: #e57373; 
 }
-.cancel-btn:hover {
-  background: #616161;
+.delete-btn:hover { 
+  background: #ef5350; 
 }
+
+.save-btn { 
+  background: #81c784;    
+}
+.save-btn:hover { 
+  background: #66bb6a; 
+}
+
+.cancel-btn { 
+  background: #bdbdbd;  
+}
+.cancel-btn:hover { 
+  background: #9e9e9e; 
+}
+
+
 .edit-input {
-  /* Nutze die globalen Styles, aber mit 100% Breite */
   width: calc(100% - 1.2rem);
   padding: 0.6rem;
   margin-bottom: 0.5rem;
