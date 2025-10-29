@@ -7,6 +7,7 @@ export interface Entry {
   id: string;
   title: string;
   content: string;
+  category: string;
   createdAt: Date;
 }
 
@@ -29,12 +30,13 @@ export async function getEntries(): Promise<Entry[]> {
 }
 
 // Erstellt einen neuen Eintrag
-export async function createEntry(title: string, content: string): Promise<Entry> {
+export async function createEntry(title: string, content: string, category: string): Promise<Entry> {
   console.log("Speichere neuen Eintrag in Deno KV...");
   const newEntry: Entry = {
     id: crypto.randomUUID(),
     title,
     content,
+    category,
     createdAt: new Date(),
   };
 
@@ -46,7 +48,7 @@ export async function createEntry(title: string, content: string): Promise<Entry
 }
 
 // Aktualisiert einen Eintrag
-export async function updateEntry(id: string, title: string, content: string): Promise<Entry | null> {
+export async function updateEntry(id: string, title: string, content: string, category: string): Promise<Entry | null> {
   console.log(`Aktualisiere Eintrag ${id} in Deno KV...`);
   const key = ["entries", id];
 
@@ -61,6 +63,7 @@ export async function updateEntry(id: string, title: string, content: string): P
     ...entryRes.value, // Behalte alte Werte wie id und createdAt bei
     title,
     content,
+    category,
   };
 
   // 3. Überschreibe den alten Eintrag am selben Schlüssel

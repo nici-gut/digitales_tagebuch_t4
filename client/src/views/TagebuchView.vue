@@ -22,22 +22,42 @@
         placeholder="Dein Eintrag..."
         rows="4"
       ></textarea>
+      <select v-model="newEntryCategory" class="category-select">
+        <option value="" disabled>Kategorie wählen...</option>
+        <option v-for="category in categories" :key="category" :value="category">
+          {{ category }}
+        </option>
+      </select>
       <button @click="addEntry">Speichern</button>
     </div>
 
     <hr />
 
     <h2>Deine Einträge</h2>
+    <div class="filter-section">
+      <select v-model="selectedFilter" class="category-filter">
+        <option value="">Alle Kategorien</option>
+        <option v-for="category in categories" :key="category" :value="category">
+          {{ category }}
+        </option>
+      </select>
+    </div>
     <ul class="entry-list">
       <li v-if="loading">Lade Einträge...</li>
       <li v-if="!loading && entries.length === 0">Noch keine Einträge vorhanden.</li>
       
-      <li v-for="entry in entries" :key="entry.id">
+      <li v-for="entry in filteredEntries" :key="entry.id">
         
         <template v-if="editingEntryId === entry.id">
           <div class="content">
             <input type="text" v-model="editTitle" class="edit-input" />
             <textarea v-model="editContent" class="edit-input" rows="4"></textarea>
+            <select v-model="editCategory" class="category-select">
+              <option value="" disabled>Kategorie wählen...</option>
+              <option v-for="category in categories" :key="category" :value="category">
+                {{ category }}
+              </option>
+            </select>
           </div>
           <div class="actions">
             <button @click="saveEntry(entry.id)" class="save-btn">
@@ -52,6 +72,7 @@
         <template v-else>
           <div class="content">
             <strong>{{ entry.title }}</strong>
+            <span class="entry-category">{{ entry.category }}</span>
             <p>{{ entry.content }}</p>
             <small>{{ new Date(entry.createdAt).toLocaleString('de-DE') }}</small>
           </div>
@@ -72,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 
 // Interface für einen Eintrag (muss mit db.ts übereinstimmen)
@@ -80,8 +101,23 @@ interface Entry {
   id: string;
   title: string;
   content: string;
+  category: string;
   createdAt: Date;
 }
+
+// Verfügbare Kategorien
+const categories = [
+  'Persönlich',
+  'Reisen',
+  'Finanzen',
+  'Gesundheit & Fitness',
+  'Arbeit & Studium',
+  'Projekte',
+  'Träume & Ziele',
+  'Familie & Freunde',
+  'Hobbys & Freizeit',
+  'Essen & Rezepte'
+]
 
 const authStore = useAuthStore()
 const loading = ref(true)
@@ -90,11 +126,20 @@ const entries = ref<Entry[]>([])
 // Formular-Daten für neuen Eintrag
 const newEntryTitle = ref('')
 const newEntryContent = ref('')
+const newEntryCategory = ref('')
+const selectedFilter = ref('')
 
 // Refs für den Bearbeitungs-Zustand
 const editingEntryId = ref<string | null>(null) // ID des Eintrags, der bearbeitet wird
 const editTitle = ref('') // Temporärer Titel während der Bearbeitung
 const editContent = ref('') // Temporärer Inhalt während der Bearbeitung
+const editCategory = ref('') // Temporäre Kategorie während der Bearbeitung
+
+// Computed property für gefilterte Einträge
+const filteredEntries = computed(() => {
+  if (!selectedFilter.value) return entries.value
+  return entries.value.filter(entry => entry.category === selectedFilter.value)
+})
 
 // --- READ ---
 // Lädt alle Einträge vom Server
@@ -115,8 +160,8 @@ async function loadEntries() {
 // --- CREATE ---
 // Speichert einen neuen Eintrag
 async function addEntry() {
-  if (!newEntryTitle.value.trim() || !newEntryContent.value.trim()) {
-    alert('Bitte Titel und Inhalt eingeben.')
+  if (!newEntryTitle.value.trim() || !newEntryContent.value.trim() || !newEntryCategory.value) {
+    alert('Bitte Titel, Inhalt und Kategorie eingeben.')
     return
   }
   try {
@@ -125,7 +170,8 @@ async function addEntry() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: newEntryTitle.value,
-        content: newEntryContent.value
+        content: newEntryContent.value,
+        category: newEntryCategory.value
       })
     })
     
@@ -134,6 +180,7 @@ async function addEntry() {
     // Formular leeren und Liste neu laden
     newEntryTitle.value = ''
     newEntryContent.value = ''
+    newEntryCategory.value = ''
     await loadEntries()
   } catch (error) {
     console.error(error)
@@ -169,6 +216,7 @@ function toggleEdit(entry: Entry) {
   // Fülle die Formularfelder mit den aktuellen Daten
   editTitle.value = entry.title
   editContent.value = entry.content
+  editCategory.value = entry.category
 }
 
 // Wird aufgerufen, wenn "Abbrechen" geklickt wird
@@ -177,12 +225,13 @@ function cancelEdit() {
   editingEntryId.value = null
   editTitle.value = ''
   editContent.value = ''
+  editCategory.value = ''
 }
 
 // Wird aufgerufen, wenn "Speichern" geklickt wird
 async function saveEntry(id: string) {
-  if (!editTitle.value.trim() || !editContent.value.trim()) {
-    alert('Titel und Inhalt dürfen nicht leer sein.')
+  if (!editTitle.value.trim() || !editContent.value.trim() || !editCategory.value) {
+    alert('Titel, Inhalt und Kategorie dürfen nicht leer sein.')
     return
   }
   
@@ -192,7 +241,8 @@ async function saveEntry(id: string) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: editTitle.value,
-        content: editContent.value
+        content: editContent.value,
+        category: editCategory.value
       })
     })
 
@@ -351,6 +401,30 @@ h2 {
 .cancel-btn:hover { 
   background: #9e9e9e; 
 }
+
+.category-select, .category-filter {
+  width: 100%;
+  padding: 8px;
+  margin: 8px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.filter-section {
+  margin-bottom: 20px;
+}
+
+.entry-category {
+  display: inline-block;
+  background-color: #e0e0e0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: #666;
+}
+
+
 
 
 .edit-input {
