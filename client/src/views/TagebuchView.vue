@@ -58,7 +58,7 @@
       <li v-if="loading">Lade Einträge...</li>
       <li v-if="!loading && entries.length === 0">Noch keine Einträge vorhanden.</li>
       
-      <li v-for="entry in filteredEntries" :key="entry.id">
+  <li v-for="entry in filteredEntries" :key="entry.id" :style="entryShadowVars(entry)">
         
         <template v-if="editingEntryId === entry.id">
           <div class="content">
@@ -208,6 +208,33 @@ function getMoodColor(moodName?: string) {
   if (!moodName) return ''
   const m = moods.find(x => x.name === moodName)
   return m ? m.color : ''
+}
+
+// Helper: konvertiere Hex-Farbcode zu rgba(..., alpha)
+function hexToRgba(hex: string | undefined, alpha = 0.12) {
+  if (!hex) return `rgba(0,0,0,${alpha})`
+  let h = hex.replace('#', '')
+  if (h.length === 3) {
+    h = h.split('').map(c => c + c).join('')
+  }
+  if (h.length !== 6) return `rgba(0,0,0,${alpha})`
+  const r = parseInt(h.substring(0,2), 16)
+  const g = parseInt(h.substring(2,4), 16)
+  const b = parseInt(h.substring(4,6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+// Gibt ein Objekt mit CSS-Variablen für Schatten zurück (für inline :style)
+function entryShadowVars(entry: Entry) {
+  const color = entry.moodColor || getMoodColor(entry.mood)
+  if (!color) return {}
+  // stärkere Farbe beim Hover (kräftigeres Schatten-Farbe)
+  const normal = hexToRgba(color, 0.18)
+  const hover = hexToRgba(color, 0.28)
+  return {
+    '--shadow': `0 4px 12px ${normal}`,
+    '--shadow-hover': `0 6px 16px ${hover}`
+  } as Record<string,string>
 }
 
 // --- CREATE ---
@@ -389,7 +416,7 @@ h2 {
 .entry-list li {
   background: #ffffff;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: var(--shadow, 0 4px 12px rgba(0,0,0,0.08));
   
   display: flex;
   flex-direction: column;
@@ -399,7 +426,7 @@ h2 {
 }
 .entry-list li:hover {
   transform: translateY(-5px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  box-shadow: var(--shadow-hover, 0 6px 16px rgba(0,0,0,0.12));
 }
 
 .content {
