@@ -273,16 +273,13 @@ async function addEntry() {
 // --- DELETE ---
 // Löscht einen Eintrag
 async function deleteEntry(id: string) {
-  if (!confirm('Bist du sicher, dass du diesen Eintrag löschen möchtest?')) {
-    return
-  }
   try {
     const res = await authStore.fetchWithAuth(`/entries/${id}`, {
       method: 'DELETE'
     })
-    
+
     if (!res.ok) throw new Error('Fehler beim Löschen')
-    
+
     // Liste neu laden, um den gelöschten Eintrag zu entfernen
     await loadEntries()
   } catch (error) {
