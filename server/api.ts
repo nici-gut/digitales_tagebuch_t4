@@ -33,12 +33,13 @@ router.post("/login", async (ctx) => {
 // [C]REATE: POST /api/entries
 router.post("/entries", async (ctx) => {
   const body = await ctx.request.body({ type: "json" }).value;
+  // mood und moodColor sind optional aber sinnvoll
   if (!body.title || !body.content || !body.category) {
     ctx.response.status = 400; // Bad Request
     ctx.response.body = { error: "Titel, Inhalt und Kategorie sind erforderlich." };
     return;
   }
-  const newEntry = await createEntry(body.title, body.content, body.category);
+  const newEntry = await createEntry(body.title, body.content, body.category, body.mood, body.moodColor);
   ctx.response.status = 201; // Created
   ctx.response.body = newEntry;
 });
@@ -60,7 +61,7 @@ router.put("/entries/:id", async (ctx) => {
     return;
   }
 
-  const updatedEntry = await updateEntry(id, body.title, body.content, body.category);
+  const updatedEntry = await updateEntry(id, body.title, body.content, body.category, body.mood, body.moodColor);
   if (updatedEntry) {
     ctx.response.body = updatedEntry;
   } else {

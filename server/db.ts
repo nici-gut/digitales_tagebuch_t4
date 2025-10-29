@@ -8,6 +8,8 @@ export interface Entry {
   title: string;
   content: string;
   category: string;
+  mood?: string; // z.B. 'Traurig', 'Glücklich'
+  moodColor?: string; // z.B. '#ff0000'
   createdAt: Date;
 }
 
@@ -30,13 +32,15 @@ export async function getEntries(): Promise<Entry[]> {
 }
 
 // Erstellt einen neuen Eintrag
-export async function createEntry(title: string, content: string, category: string): Promise<Entry> {
+export async function createEntry(title: string, content: string, category: string, mood?: string, moodColor?: string): Promise<Entry> {
   console.log("Speichere neuen Eintrag in Deno KV...");
   const newEntry: Entry = {
     id: crypto.randomUUID(),
     title,
     content,
     category,
+    mood,
+    moodColor,
     createdAt: new Date(),
   };
 
@@ -48,7 +52,7 @@ export async function createEntry(title: string, content: string, category: stri
 }
 
 // Aktualisiert einen Eintrag
-export async function updateEntry(id: string, title: string, content: string, category: string): Promise<Entry | null> {
+export async function updateEntry(id: string, title: string, content: string, category: string, mood?: string, moodColor?: string): Promise<Entry | null> {
   console.log(`Aktualisiere Eintrag ${id} in Deno KV...`);
   const key = ["entries", id];
 
@@ -64,6 +68,8 @@ export async function updateEntry(id: string, title: string, content: string, ca
     title,
     content,
     category,
+    mood: mood ?? entryRes.value.mood,
+    moodColor: moodColor ?? entryRes.value.moodColor,
   };
 
   // 3. Überschreibe den alten Eintrag am selben Schlüssel

@@ -28,6 +28,12 @@
           {{ category }}
         </option>
       </select>
+      <select v-model="newEntryMood" class="category-select">
+        <option value="" disabled>Stimmung wählen...</option>
+        <option v-for="m in moods" :key="m.name" :value="m.name">
+          {{ m.name }}
+        </option>
+      </select>
       <button @click="addEntry">Speichern</button>
     </div>
 
@@ -39,6 +45,12 @@
         <option value="">Alle Kategorien</option>
         <option v-for="category in categories" :key="category" :value="category">
           {{ category }}
+        </option>
+      </select>
+      <select v-model="selectedMoodFilter" class="category-filter">
+        <option value="">Alle Stimmungen</option>
+        <option v-for="m in moods" :key="m.name" :value="m.name">
+          {{ m.name }}
         </option>
       </select>
     </div>
@@ -58,6 +70,12 @@
                 {{ category }}
               </option>
             </select>
+            <select v-model="editMood" class="category-select">
+              <option value="" disabled>Stimmung wählen...</option>
+              <option v-for="m in moods" :key="m.name" :value="m.name">
+                {{ m.name }}
+              </option>
+            </select>
           </div>
           <div class="actions">
             <button @click="saveEntry(entry.id)" class="save-btn">
@@ -73,6 +91,12 @@
           <div class="content">
             <strong>{{ entry.title }}</strong>
             <span class="entry-category">{{ entry.category }}</span>
+            <span
+              v-if="entry.mood || getMoodColor(entry.mood)"
+              class="mood-dot"
+              :title="entry.mood"
+              :style="{ backgroundColor: entry.moodColor || getMoodColor(entry.mood) }"
+            ></span>
             <p>{{ entry.content }}</p>
             <small>{{ new Date(entry.createdAt).toLocaleString('de-DE') }}</small>
           </div>
@@ -102,6 +126,8 @@ interface Entry {
   title: string;
   content: string;
   category: string;
+  mood?: string;
+  moodColor?: string;
   createdAt: Date;
 }
 
@@ -119,6 +145,17 @@ const categories = [
   'Essen & Rezepte'
 ]
 
+// Verfügbare Stimmungen (Name + Farbe)
+const moods: { name: string; color: string }[] = [
+  { name: 'Glücklich', color: '#f6c84c' },
+  { name: 'Aufgeregt', color: '#ff8a65' },
+  { name: 'Neutral', color: '#90a4ae' },
+  { name: 'Traurig', color: '#64b5f6' },
+  { name: 'Gestresst', color: '#e57373' },
+  { name: 'Dankbar', color: '#81c784' },
+  { name: 'Nachdenklich', color: '#9575cd' }
+]
+
 const authStore = useAuthStore()
 const loading = ref(true)
 const entries = ref<Entry[]>([])
@@ -127,18 +164,27 @@ const entries = ref<Entry[]>([])
 const newEntryTitle = ref('')
 const newEntryContent = ref('')
 const newEntryCategory = ref('')
+const newEntryMood = ref('')
 const selectedFilter = ref('')
+const selectedMoodFilter = ref('')
 
 // Refs für den Bearbeitungs-Zustand
 const editingEntryId = ref<string | null>(null) // ID des Eintrags, der bearbeitet wird
 const editTitle = ref('') // Temporärer Titel während der Bearbeitung
 const editContent = ref('') // Temporärer Inhalt während der Bearbeitung
 const editCategory = ref('') // Temporäre Kategorie während der Bearbeitung
+const editMood = ref('') // Temporäre Stimmung während der Bearbeitung
 
 // Computed property für gefilterte Einträge
 const filteredEntries = computed(() => {
-  if (!selectedFilter.value) return entries.value
-  return entries.value.filter(entry => entry.category === selectedFilter.value)
+  let list = entries.value
+  if (selectedFilter.value) {
+    list = list.filter(entry => entry.category === selectedFilter.value)
+  }
+  if (selectedMoodFilter.value) {
+    list = list.filter(entry => entry.mood === selectedMoodFilter.value)
+  }
+  return list
 })
 
 // --- READ ---
@@ -157,6 +203,13 @@ async function loadEntries() {
   }
 }
 
+// Helfer: gebe die Farbe zur Stimmung zurück
+function getMoodColor(moodName?: string) {
+  if (!moodName) return ''
+  const m = moods.find(x => x.name === moodName)
+  return m ? m.color : ''
+}
+
 // --- CREATE ---
 // Speichert einen neuen Eintrag
 async function addEntry() {
@@ -171,16 +224,19 @@ async function addEntry() {
       body: JSON.stringify({
         title: newEntryTitle.value,
         content: newEntryContent.value,
-        category: newEntryCategory.value
+        category: newEntryCategory.value,
+        mood: newEntryMood.value,
+        moodColor: getMoodColor(newEntryMood.value)
       })
     })
     
     if (!res.ok) throw new Error('Fehler beim Speichern')
 
-    // Formular leeren und Liste neu laden
-    newEntryTitle.value = ''
-    newEntryContent.value = ''
-    newEntryCategory.value = ''
+  // Formular leeren und Liste neu laden
+  newEntryTitle.value = ''
+  newEntryContent.value = ''
+  newEntryCategory.value = ''
+  newEntryMood.value = ''
     await loadEntries()
   } catch (error) {
     console.error(error)
@@ -217,6 +273,7 @@ function toggleEdit(entry: Entry) {
   editTitle.value = entry.title
   editContent.value = entry.content
   editCategory.value = entry.category
+  editMood.value = entry.mood || ''
 }
 
 // Wird aufgerufen, wenn "Abbrechen" geklickt wird
@@ -226,6 +283,7 @@ function cancelEdit() {
   editTitle.value = ''
   editContent.value = ''
   editCategory.value = ''
+  editMood.value = ''
 }
 
 // Wird aufgerufen, wenn "Speichern" geklickt wird
@@ -242,7 +300,9 @@ async function saveEntry(id: string) {
       body: JSON.stringify({
         title: editTitle.value,
         content: editContent.value,
-        category: editCategory.value
+        category: editCategory.value,
+        mood: editMood.value,
+        moodColor: getMoodColor(editMood.value)
       })
     })
 
@@ -424,6 +484,16 @@ h2 {
   color: #666;
 }
 
+
+.mood-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-left: 8px;
+  vertical-align: middle;
+  border: 2px solid rgba(255,255,255,0.7);
+}
 
 
 
