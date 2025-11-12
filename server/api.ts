@@ -2,21 +2,24 @@ import { Router } from "oak";
 import { getEntries, createEntry, updateEntry, deleteEntry } from "./db.ts";
 import { createJWT } from "./auth.ts";
 
-// Initialisiere einen neuen Router
+
 const router = new Router();
 
-// Setze ein Präfix für alle API-Routen, z.B. /api
 router.prefix("/api");
 // [POST] /api/login
 router.post("/login", async (ctx) => {
   const body = await ctx.request.body({ type: "json" }).value;
   const { username, password } = body;
 
-  // --- Hardcodierte Benutzerprüfung ---
-  // In einer echten App würdest du hier die Deno KV-Datenbank
-  // nach einem Benutzer mit diesem Passwort-Hash durchsuchen.
-  if (username === "admin" && password === "password123") {
-    // Benutzer ist gültig, erstelle ein Token
+
+  const users: Record<string, string> = {
+    admin1: "password",
+    admin2: "password",
+    admin3: "password",
+  };
+
+  // Prüfe, ob der Benutzer existiert und das Passwort stimmt
+  if (users[username] && users[username] === password) {
     const token = await createJWT(username);
     ctx.response.body = {
       message: "Login erfolgreich!",
@@ -24,8 +27,7 @@ router.post("/login", async (ctx) => {
       user: { username: username },
     };
   } else {
-    // Ungültige Daten
-    ctx.response.status = 401; // Unauthorized
+    ctx.response.status = 401; 
     ctx.response.body = { error: "Ungültiger Benutzername oder Passwort." };
   }
 });
@@ -33,26 +35,39 @@ router.post("/login", async (ctx) => {
 // [C]REATE: POST /api/entries
 router.post("/entries", async (ctx) => {
   const body = await ctx.request.body({ type: "json" }).value;
-  // mood und moodColor sind optional aber sinnvoll
+
   if (!body.title || !body.content || !body.category) {
-    ctx.response.status = 400; // Bad Request
+    ctx.response.status = 400; 
     ctx.response.body = { error: "Titel, Inhalt und Kategorie sind erforderlich." };
     return;
   }
-  const newEntry = await createEntry(body.title, body.content, body.category, body.mood, body.moodColor);
-  ctx.response.status = 201; // Created
+  
+  const username = (ctx.state.user as { username?: string })?.username;
+  if (!username) {
+    ctx.response.status = 401;
+    ctx.response.body = { error: "Kein Benutzer im Token." };
+    return;
+  }
+  const newEntry = await createEntry(username, body.title, body.content, body.category, body.mood, body.moodColor);
+  ctx.response.status = 201;
   ctx.response.body = newEntry;
 });
 
 // [R]EAD: GET /api/entries
 router.get("/entries", async (ctx) => {
-  const entries = await getEntries();
+  const username = (ctx.state.user as { username?: string })?.username;
+  if (!username) {
+    ctx.response.status = 401;
+    ctx.response.body = { error: "Kein Benutzer im Token." };
+    return;
+  }
+  const entries = await getEntries(username);
   ctx.response.body = entries;
 });
 
 // [U]PDATE: PUT /api/entries/:id
 router.put("/entries/:id", async (ctx) => {
-  const { id } = ctx.params; // Holt die :id aus der URL
+  const { id } = ctx.params; 
   const body = await ctx.request.body({ type: "json" }).value;
 
   if (!body.title || !body.content || !body.category) {
@@ -61,11 +76,17 @@ router.put("/entries/:id", async (ctx) => {
     return;
   }
 
-  const updatedEntry = await updateEntry(id, body.title, body.content, body.category, body.mood, body.moodColor);
+  const username = (ctx.state.user as { username?: string })?.username;
+  if (!username) {
+    ctx.response.status = 401;
+    ctx.response.body = { error: "Kein Benutzer im Token." };
+    return;
+  }
+  const updatedEntry = await updateEntry(username, id, body.title, body.content, body.category, body.mood, body.moodColor);
   if (updatedEntry) {
     ctx.response.body = updatedEntry;
   } else {
-    ctx.response.status = 404; // Not Found
+    ctx.response.status = 404; 
     ctx.response.body = { error: "Eintrag nicht gefunden." };
   }
 });
@@ -73,10 +94,16 @@ router.put("/entries/:id", async (ctx) => {
 // [D]ELETE: DELETE /api/entries/:id
 router.delete("/entries/:id", async (ctx) => {
   const { id } = ctx.params;
-  const success = await deleteEntry(id);
+  const username = (ctx.state.user as { username?: string })?.username;
+  if (!username) {
+    ctx.response.status = 401;
+    ctx.response.body = { error: "Kein Benutzer im Token." };
+    return;
+  }
+  const success = await deleteEntry(username, id);
 
   if (success) {
-    ctx.response.status = 204; // No Content
+    ctx.response.status = 204; 
   } else {
     ctx.response.status = 404;
     ctx.response.body = { error: "Eintrag nicht gefunden." };

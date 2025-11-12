@@ -3,20 +3,22 @@
     <h2>Digitales Tagebuch Login</h2>
     
     <div>
-      <input 
-        v-model="username" 
-        type="text" 
-        placeholder="Benutzername" 
-      />
+      <select v-model="username" class="text-input">
+        <option value="" disabled>Benutzer wählen...</option>
+        <option value="admin1">Admin1</option>
+        <option value="admin2">Admin2</option>
+        <option value="admin3">Admin3</option>
+      </select>
     </div>
     <div>
       <input 
         v-model="password" 
         type="password" 
         placeholder="Passwort" 
+        class="text-input"
       />
     </div>
-    <button @click="handleLogin" :disabled="isLoading">
+    <button @click="handleLogin" :disabled="isLoading" class="text-input login-btn">
       {{ isLoading ? 'Logge ein...' : 'Einloggen' }}
     </button>
 
@@ -79,5 +81,25 @@ div {
 button:disabled {
   background-color: #9e9e9e;
   cursor: not-allowed;
+}
+
+.text-input {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  display: block;
+}
+
+.login-btn {
+  background-color: #5c6bc0;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+.login-btn:hover:not(:disabled) {
+  background-color: #7986cb;
 }
 </style>
