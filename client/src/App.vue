@@ -3,14 +3,10 @@
 </template>
 
 <script setup lang="ts">
-// Wir importieren nur noch, was wir wirklich brauchen
 import { RouterView } from 'vue-router'
 </script>
 
 <style>
-/* Globale Styles für die ganze App.
-  Ich habe sie an dein index.html-Beispiel angelehnt.
-*/
 body {
   font-family: Arial, sans-serif;
   margin: 2rem;
@@ -32,7 +28,7 @@ h1, h2 {
 input[type="text"],
 input[type="password"],
 textarea {
-  width: calc(100% - 1.2rem); /* 100% - padding */
+  width: calc(100% - 1.2rem);
   padding: 0.6rem;
   margin: 0.5rem 0;
   border: 1px solid #ccc;

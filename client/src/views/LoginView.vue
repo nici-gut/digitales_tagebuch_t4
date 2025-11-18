@@ -28,15 +28,13 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-// Importiere unseren neuen Auth-Store
 import { useAuthStore } from '@/stores/authStore'
-// Importiere den Vue Router, um weiterzuleiten
 import { useRouter } from 'vue-router'
 
 const username = ref('')
 const password = ref('')
 const errorMessage = ref('')
-const isLoading = ref(false) // Für Lade-Feedback
+const isLoading = ref(false)
 
 // Initialisiere den Store und den Router
 const authStore = useAuthStore()
@@ -65,7 +63,6 @@ async function handleLogin() {
 </script>
 
 <style scoped>
-/* Die Styles bleiben unverändert */
 .card {
   max-width: 400px;
 }
@@ -73,11 +70,10 @@ div {
   margin-bottom: 0.5rem;
 }
 .error {
-  color: #e53935; /* Rot */
+  color: #e53935;
   text-align: center;
   margin-top: 1rem;
 }
-/* Style für deaktivierten Button */
 button:disabled {
   background-color: #9e9e9e;
   cursor: not-allowed;
