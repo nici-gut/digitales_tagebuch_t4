@@ -30,7 +30,7 @@ export async function verifyJWT(token: string): Promise<JWTPayload | null> {
     // Token ist gültig
     return payload;
   } catch (err) {
-    // Token ist ungültig (abgelaufen, falsche Signatur etc.)
+    
     return null;
   }
 }
