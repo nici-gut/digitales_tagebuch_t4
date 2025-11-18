@@ -13,7 +13,7 @@ router.post("/login", async (ctx) => {
 
 
   const users: Record<string, string> = {
-    admin1: "password",
+    t4exam: "SuperKurs",
     admin2: "password",
     admin3: "password",
   };

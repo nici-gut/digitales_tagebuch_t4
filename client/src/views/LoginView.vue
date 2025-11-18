@@ -5,7 +5,7 @@
     <div>
       <select v-model="username" class="text-input">
         <option value="" disabled>Benutzer wählen...</option>
-        <option value="admin1">Admin1</option>
+        <option value="t4exam">t4exam</option>
         <option value="admin2">Admin2</option>
         <option value="admin3">Admin3</option>
       </select>
